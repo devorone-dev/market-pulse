@@ -63,8 +63,8 @@ ${numbered}
 Respond with a JSON array. The array MUST have exactly ${items.length} objects, in the SAME ORDER as the headlines above. Each object:
 {"summary":"max 15 words, facts only, no adjectives","direction":"Bullish or Bearish or Neutral","importance":integer 1 to 10,"confidence":integer 1 to 100,"assets":["max 3 tickers or asset names"],"category":"Macro or Stocks or Commodities or Crypto or Rates or Geopolitics or Earnings"}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
-
+  const url = `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent`;
+  
   const MAX_RETRIES = 4;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const controller = new AbortController();
