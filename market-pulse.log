@@ -1,0 +1,145 @@
+[2026-07-27T19:55:16.714Z] Gemini 429/503 на спробі 1, чекаю 16с
+[2026-07-27T20:05:46.049Z] Gemini 429/503 на спробі 1, чекаю 18с
+[2026-07-27T20:06:08.686Z] Gemini 429/503 на спробі 2, чекаю 30с
+[2026-07-27T20:08:54.152Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-27T20:12:59.173Z] Помилка Telegram на заголовку "8-K - SmartKem, Inc. (0001817760) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 33","parameters":{"retry_after":33}}
+[2026-07-27T20:13:00.486Z] Помилка Telegram на заголовку "8-K - Northwest Bancshares, Inc. (0001471265) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 32","parameters":{"retry_after":32}}
+[2026-07-27T20:13:01.821Z] Помилка Telegram на заголовку "8-K - FOXO TECHNOLOGIES INC. (0001812360) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 30","parameters":{"retry_after":30}}
+[2026-07-27T20:13:03.130Z] Помилка Telegram на заголовку "8-K - Capital Bancorp Inc (0001419536) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 29","parameters":{"retry_after":29}}
+[2026-07-27T20:13:04.653Z] Помилка Telegram на заголовку "8-K - Maison Solutions Inc. (0001892292) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 28","parameters":{"retry_after":28}}
+[2026-07-27T20:13:05.970Z] Помилка Telegram на заголовку "8-K - Zeta Global Holdings Corp. (0001851003) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 26","parameters":{"retry_after":26}}
+[2026-07-27T20:13:07.371Z] Помилка Telegram на заголовку "8-K - Aptevo Therapeutics Inc. (0001671584) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 25","parameters":{"retry_after":25}}
+[2026-07-27T20:13:08.689Z] Помилка Telegram на заголовку "8-K - AGILYSYS INC (0000078749) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 24","parameters":{"retry_after":24}}
+[2026-07-27T20:13:10.057Z] Помилка Telegram на заголовку "8-K - KFORCE INC (0000930420) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 22","parameters":{"retry_after":22}}
+[2026-07-27T20:13:11.385Z] Помилка Telegram на заголовку "8-K - CB Financial Services, Inc. (0001605301) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 21","parameters":{"retry_after":21}}
+[2026-07-27T20:13:12.696Z] Помилка Telegram на заголовку "8-K - ENTERPRISE FINANCIAL SERVICES CORP (0001025835) (Filer": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 20","parameters":{"retry_after":20}}
+[2026-07-27T20:13:14.009Z] Помилка Telegram на заголовку "8-K - SANMINA CORP (0000897723) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 18","parameters":{"retry_after":18}}
+[2026-07-27T20:13:15.318Z] Помилка Telegram на заголовку "8-K - Brixmor Operating Partnership LP (0001630031) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 17","parameters":{"retry_after":17}}
+[2026-07-27T20:13:16.653Z] Помилка Telegram на заголовку "8-K - Brixmor Property Group Inc. (0001581068) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 16","parameters":{"retry_after":16}}
+[2026-07-27T20:13:17.965Z] Помилка Telegram на заголовку "8-K - CADENCE DESIGN SYSTEMS INC (0000813672) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 14","parameters":{"retry_after":14}}
+[2026-07-27T20:13:19.282Z] Помилка Telegram на заголовку "8-K - CODEXIS, INC. (0001200375) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 13","parameters":{"retry_after":13}}
+[2026-07-27T20:13:20.611Z] Помилка Telegram на заголовку "8-K - Gossamer Bio, Inc. (0001728117) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 12","parameters":{"retry_after":12}}
+[2026-07-27T20:13:21.927Z] Помилка Telegram на заголовку "8-K - S&T BANCORP INC (0000719220) (Filer)": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 10","parameters":{"retry_after":10}}
+[2026-07-27T20:13:23.246Z] Помилка Telegram на заголовку "Trump administration asks Supreme Court to intervene to allo": Telegram помилка: HTTP 429: {"ok":false,"error_code":429,"description":"Too Many Requests: retry after 9","parameters":{"retry_after":9}}
+[2026-07-28T17:52:40.772Z] Gemini 429/503 на спробі 1, чекаю 16с
+[2026-07-28T17:53:00.915Z] Gemini 429/503 на спробі 2, чекаю 30с
+[2026-07-28T17:53:36.412Z] Gemini 429/503 на спробі 3, чекаю 45с
+[2026-07-28T17:54:33.756Z] Gemini помилка HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-07-28T17:54:33.756Z] Помилка analyzeHeadlinesBatch (3 заголовків): Gemini API помилка: HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try a
+[2026-07-28T17:55:57.883Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-28T17:56:16.161Z] Gemini 429/503 на спробі 2, чекаю 31с
+[2026-07-28T17:56:55.068Z] Gemini 429/503 на спробі 3, чекаю 46с
+[2026-07-28T17:57:42.076Z] Помилка analyzeHeadlinesBatch (1 заголовків): Gemini API помилка: HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try a
+[2026-07-28T17:57:42.075Z] Gemini помилка HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-07-28T17:57:58.254Z] Gemini 429/503 на спробі 1, чекаю 16с
+[2026-07-28T17:58:14.965Z] Gemini 429/503 на спробі 2, чекаю 33с
+[2026-07-28T17:59:57.271Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-28T18:00:15.406Z] Gemini 429/503 на спробі 2, чекаю 32с
+[2026-07-28T18:00:48.352Z] Gemini 429/503 на спробі 3, чекаю 46с
+[2026-07-28T18:01:35.529Z] Gemini помилка HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-07-28T18:01:35.530Z] Помилка analyzeHeadlinesBatch (3 заголовків): Gemini API помилка: HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try a
+[2026-07-28T18:01:57.994Z] Gemini 429/503 на спробі 1, чекаю 16с
+[2026-07-28T18:02:38.557Z] Gemini 429/503 на спробі 2, чекаю 32с
+[2026-07-28T18:03:11.375Z] Gemini 429/503 на спробі 3, чекаю 46с
+[2026-07-28T18:04:04.905Z] Помилка analyzeHeadlinesBatch (2 заголовків): Gemini API помилка: HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try a
+[2026-07-28T18:04:04.904Z] Gemini помилка HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-07-28T18:07:28.774Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-28T18:07:54.492Z] Gemini 429/503 на спробі 2, чекаю 33с
+[2026-07-28T18:08:27.899Z] Gemini 429/503 на спробі 3, чекаю 46с
+[2026-07-28T18:09:28.189Z] Помилка analyzeHeadlinesBatch (3 заголовків): Gemini API помилка: HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try a
+[2026-07-28T18:09:28.188Z] Gemini помилка HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-07-28T18:09:51.151Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-28T18:10:09.290Z] Gemini 429/503 на спробі 2, чекаю 32с
+[2026-07-28T18:10:41.308Z] Gemini 429/503 на спробі 3, чекаю 47с
+[2026-07-28T18:11:28.565Z] Gemini помилка HTTP 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+[2026-07-28T18:11:28.565Z] Помилка analyzeHeadlinesBatch (4 заголовків): Gemini API помилка: HTTP 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on t
+[2026-07-28T18:11:52.959Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-28T18:12:10.209Z] Gemini 429/503 на спробі 2, чекаю 31с
+[2026-07-29T18:41:38.039Z] Помилка Telegram на заголовку "Ford’s big-truck bet is paying off— and Wall Street is takin": Telegram помилка: HTTP 400: {"ok":false,"error_code":400,"description":"Bad Request: group chat was upgraded to a supergroup chat","parameters":{"migrate_to_chat_id":-1003793967845}}
+[2026-07-29T18:41:39.338Z] Помилка Telegram на заголовку "Divided Fed holds interest rates steady, but three members v": Telegram помилка: HTTP 400: {"ok":false,"error_code":400,"description":"Bad Request: group chat was upgraded to a supergroup chat","parameters":{"migrate_to_chat_id":-1003793967845}}
+[2026-07-29T18:41:40.635Z] Помилка Telegram на заголовку "Here's what changed in the second Fed statement under Warsh": Telegram помилка: HTTP 400: {"ok":false,"error_code":400,"description":"Bad Request: group chat was upgraded to a supergroup chat","parameters":{"migrate_to_chat_id":-1003793967845}}
+[2026-07-29T18:43:18.994Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-29T18:43:54.343Z] Gemini 429/503 на спробі 2, чекаю 32с
+[2026-07-29T18:45:44.697Z] Gemini 429/503 на спробі 1, чекаю 16с
+[2026-07-29T18:50:12.815Z] Помилка Telegram на заголовку "Divided Fed holds interest rates steady, but three members v": Telegram помилка: HTTP 400: {"ok":false,"error_code":400,"description":"Bad Request: not enough rights to send text messages to the chat"}
+[2026-07-29T18:50:14.118Z] Помилка Telegram на заголовку "Here's what changed in the second Fed statement under Warsh": Telegram помилка: HTTP 400: {"ok":false,"error_code":400,"description":"Bad Request: not enough rights to send text messages to the chat"}
+[2026-07-29T18:50:35.778Z] Gemini 429/503 на спробі 1, чекаю 16с
+[2026-07-29T18:58:10.043Z] Gemini 429/503 на спробі 1, чекаю 17с
+[2026-07-29T18:58:27.880Z] Gemini 429/503 на спробі 2, чекаю 33с
+[2026-07-29T19:00:20.063Z] Gemini 429/503 на спробі 3, чекаю 48с
+[2026-07-29T19:03:01.887Z] Gemini 429/503 на спробі 1, чекаю 18с
+[2026-07-29T19:03:56.595Z] Gemini 429/503 на спробі 2, чекаю 30с
+[2026-07-29T19:05:02.525Z] Gemini 429/503 на спробі 3, чекаю 47с
+[2026-07-29T19:07:55.600Z] Gemini 429/503 на спробі 1, чекаю 18с
+[2026-07-29T19:08:19.147Z] Gemini 429/503 на спробі 2, чекаю 32с
+[2026-07-29T19:09:16.566Z] Gemini timeout (25с) на спробі 3
+[2026-07-29T19:09:41.569Z] Gemini timeout (25с) на спробі 4
+[2026-07-29T19:09:41.569Z] Помилка analyzeHeadlinesBatch (4 заголовків): Gemini не відповідає (timeout) після всіх спроб
+[2026-07-29T19:10:10.982Z] Gemini 429/503 на спробі 1, чекаю 18с
+[2026-07-29T19:10:34.167Z] Gemini 429/503 на спробі 2, чекаю 31с
+[2026-07-29T19:11:05.681Z] Gemini 429/503 на спробі 3, чекаю 45с
+[2026-07-29T19:11:51.232Z] Gemini помилка HTTP 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+[2026-07-29T19:11:51.232Z] Помилка analyzeHeadlinesBatch (5 заголовків): Gemini API помилка: HTTP 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on t
+[2026-07-29T19:12:10.882Z] Gemini 429/503 на спробі 1, чекаю 17с
