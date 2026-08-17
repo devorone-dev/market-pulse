@@ -17,7 +17,7 @@ const PUBLISH_LIMIT_PER_CYCLE = 6;
 const LOG_FILE = path.join(__dirname, 'market-pulse.log');
 const LOG_MAX_BYTES = 5 * 1024 * 1024;
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 
 function logLine(text) {
   const stamp = new Date().toISOString();
