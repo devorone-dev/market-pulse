@@ -15,7 +15,7 @@
 require('dotenv').config();
 const { fetchAllSources } = require('./newsFetcher');
 const store = require('./store');
-const fs = require('fs');
+const fetchAllSources = require('./newsFetcher');
 const path = require('path');
 
 // ==== НАЛАШТУВАННЯ — з .env ====
