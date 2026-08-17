@@ -379,7 +379,7 @@ checkConfig();
 console.log('🚀 Market Pulse AI запущено.');
 console.log(`   Поріг важливості: ${IMPORTANCE_THRESHOLD}/10`);
 console.log(`   Перевірка кожні: ${POLL_INTERVAL_MS / 1000} сек`);
-console.log(`   У сховищі вже ${store.size()} оброблених новин.`);
+console.log(`   У сховищі вже ${store.size} оброблених новин.`);
 console.log('   Натисни Ctrl+C щоб зупинити.\n');
 
 pollCycle();
