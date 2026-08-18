@@ -1,9 +1,9 @@
 import http from 'http';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import Parser from 'rss-parser';
 
 // ==========================================
-// ФІКС ДЛЯ RENDER (Веб-сервер)
+// ВЕБ-СЕРВЕР ДЛЯ RENDER (HEALTH CHECK)
 // ==========================================
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
@@ -14,18 +14,18 @@ http.createServer((req, res) => {
 });
 
 // ==========================================
-// НАЛАШТУВАННЯ ТА ЗМІННІ ОТОЧЕННЯ
+// НАЛАШТУВАННЯ ЗМІННИХ
 // ==========================================
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// Використовуємо канонічну назву моделі
+const MODEL_NAME = 'gemini-1.5-flash';
 const IMPORTANCE_THRESHOLD = parseInt(process.env.IMPORTANCE_THRESHOLD || '7', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '30000', 10);
 
-// Ініціалізація нового SDK
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
 
 const RSS_FEEDS = [
   'https://feeds.content.dowjones.io/public/rss/mw_topstories',
@@ -42,12 +42,8 @@ const parser = new Parser({
 
 const processedNews = new Set();
 
-if (!GEMINI_API_KEY || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-  console.error('❌ ПОМИЛКА: Перевірте наявність GEMINI_API_KEY, TELEGRAM_BOT_TOKEN та TELEGRAM_CHAT_ID!');
-}
-
 // ==========================================
-// ФУНКЦІЯ АНАЛІЗУ
+// АНАЛІЗ ЧЕРЕЗ GEMINI
 // ==========================================
 async function analyzeHeadlinesBatch(items, retries = 2) {
   const numbered = items.map((item, i) => `${i + 1}. "${item.text}"`).join('\n');
@@ -62,16 +58,18 @@ Respond with a JSON array. The array MUST have exactly ${items.length} objects, 
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await ai.models.generateContent({
-        model: MODEL,
-        contents: prompt,
-        config: {
+      const model = genAI.getGenerativeModel({ 
+        model: MODEL_NAME,
+        generationConfig: {
           responseMimeType: 'application/json',
           temperature: 0.2
         }
       });
 
-      const text = response.text || '';
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
       const cleanJson = text.replace(/```json\n?|```/g, '').trim();
       return JSON.parse(cleanJson);
 
@@ -87,7 +85,7 @@ Respond with a JSON array. The array MUST have exactly ${items.length} objects, 
 }
 
 // ==========================================
-// ВІДПРАВКА В TELEGRAM
+// TELEGRAM
 // ==========================================
 async function sendTelegramMessage(text) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -108,12 +106,12 @@ async function sendTelegramMessage(text) {
       console.error('❌ Помилка Telegram API:', errData);
     }
   } catch (err) {
-    console.error('❌ Помилка мережі при відправці в Telegram:', err.message);
+    console.error('❌ Помилка мережі Telegram:', err.message);
   }
 }
 
 // ==========================================
-// ЦИКЛ ОБРОБКИ
+// ОСНОВНИЙ ЦИКЛ
 // ==========================================
 async function fetchAndProcessNews() {
   const newItems = [];
@@ -133,13 +131,13 @@ async function fetchAndProcessNews() {
         }
       }
     } catch (err) {
-      console.warn(`⚠️ Не вдалося завантажити стрічку ${feedUrl}: ${err.message}`);
+      console.warn(`⚠️ Помилка RSS стрічки ${feedUrl}: ${err.message}`);
     }
   }
 
   if (newItems.length === 0) return;
 
-  console.log(`\n Знайдено ${newItems.length} нових заголовків. Аналізую через ${MODEL}...`);
+  console.log(`\n Знайдено ${newItems.length} нових заголовків. Аналізую...`);
 
   const BATCH_SIZE = 10;
   for (let i = 0; i < newItems.length; i += BATCH_SIZE) {
@@ -167,7 +165,7 @@ async function fetchAndProcessNews() {
             `🔗 <a href="${item.link}">Читати джерело</a>`;
 
           sendTelegramMessage(message);
-          console.log(` ✅ Опубліковано важливу новину: "${item.text}"`);
+          console.log(` ✅ Опубліковано: "${item.text}"`);
         }
       });
     } catch (err) {
@@ -179,20 +177,12 @@ async function fetchAndProcessNews() {
 // ==========================================
 // ЗАПУСК
 // ==========================================
-let cycleCount = 0;
-
 async function start() {
   console.log('🚀 Market Pulse AI запущено.');
-  console.log(`   Модель: ${MODEL}`);
-  console.log(`   Поріг важливості: ${IMPORTANCE_THRESHOLD}/10`);
 
-  cycleCount++;
-  console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
   await fetchAndProcessNews();
 
   setInterval(async () => {
-    cycleCount++;
-    console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
     await fetchAndProcessNews();
   }, CHECK_INTERVAL_MS);
 }
