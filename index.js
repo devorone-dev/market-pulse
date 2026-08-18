@@ -1,4 +1,3 @@
-
 import Parser from 'rss-parser';
 
 // ==========================================
@@ -13,14 +12,21 @@ const MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 const IMPORTANCE_THRESHOLD = parseInt(process.env.IMPORTANCE_THRESHOLD || '7', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '30000', 10);
 
-// Джерела RSS новин
+// Перевірені та стабільні RSS-стрічки
 const RSS_FEEDS = [
-  '[https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance](https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance)',
-  '[https://feeds.a.dj.com/rss/RSSMarketsMain.xml](https://feeds.a.dj.com/rss/RSSMarketsMain.xml)',
-  '[https://www.investing.com/rss/news.rss](https://www.investing.com/rss/news.rss)'
+  'https://feeds.content.dowjones.io/public/rss/mw_topstories',
+  'https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance',
+  'https://www.coindesk.com/arc/outboundfeeds/rss/'
 ];
 
-const parser = new Parser();
+// Ініціалізація RSS парсера з User-Agent (щоб сайти не блокували запити)
+const parser = new Parser({
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  },
+  timeout: 10000
+});
+
 const processedNews = new Set();
 
 // Перевірка наявності ключових змінних
@@ -43,7 +49,7 @@ ${numbered}
 Respond with a JSON array. The array MUST have exactly ${items.length} objects, in the SAME ORDER as the headlines above. Each object:
 {"summary":"max 15 words, facts only, no adjectives","direction":"Bullish or Bearish or Neutral","importance":integer 1 to 10,"confidence":integer 1 to 100,"assets":["max 3 tickers or asset names"],"category":"Macro or Stocks or Commodities or Crypto or Rates or Geopolitics or Earnings"}`;
 
-  const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -69,7 +75,6 @@ Respond with a JSON array. The array MUST have exactly ${items.length} objects, 
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       
-      // Очищення відповіді від можливих розеток markdown ```json ... ```
       const cleanJson = text.replace(/```json\n?|```/g, '').trim();
       return JSON.parse(cleanJson);
 
@@ -88,7 +93,7 @@ Respond with a JSON array. The array MUST have exactly ${items.length} objects, 
 // ВІДПРАВКА ПОВІДОМЛЕННЯ В TELEGRAM
 // ==========================================
 async function sendTelegramMessage(text) {
-  const url = `[https://api.telegram.org/bot$](https://api.telegram.org/bot$){TELEGRAM_BOT_TOKEN}/sendMessage`;
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -141,7 +146,6 @@ async function fetchAndProcessNews() {
 
   console.log(`\n Знайдено ${newItems.length} нових заголовків. Аналізую через ${MODEL}...`);
 
-  // Розбиваємо новини на батчі по 10 штук
   const BATCH_SIZE = 10;
   for (let i = 0; i < newItems.length; i += BATCH_SIZE) {
     const batch = newItems.slice(i, i + BATCH_SIZE);
@@ -188,12 +192,10 @@ async function start() {
   console.log(`   Поріг важливості: ${IMPORTANCE_THRESHOLD}/10`);
   console.log(`   Інтервал перевірки: ${CHECK_INTERVAL_MS / 1000} сек`);
 
-  // Запускаємо відразу при старті
   cycleCount++;
   console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
   await fetchAndProcessNews();
 
-  // Запускаємо повторення за інтервалом
   setInterval(async () => {
     cycleCount++;
     console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
