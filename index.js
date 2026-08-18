@@ -1,9 +1,9 @@
 import http from 'http';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import Parser from 'rss-parser';
 
 // ==========================================
-// ФІКС ДЛЯ RENDER (Веб-сервер для проходження Health Check)
+// ФІКС ДЛЯ RENDER (Веб-сервер)
 // ==========================================
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
@@ -20,15 +20,13 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// Стабільна модель за замовчуванням
-const MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const IMPORTANCE_THRESHOLD = parseInt(process.env.IMPORTANCE_THRESHOLD || '7', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '30000', 10);
 
-// Ініціалізація правильного SDK Gemini
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
+// Ініціалізація нового SDK
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-// Оновлені RSS-стрічки
 const RSS_FEEDS = [
   'https://feeds.content.dowjones.io/public/rss/mw_topstories',
   'https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance',
@@ -49,7 +47,7 @@ if (!GEMINI_API_KEY || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
 }
 
 // ==========================================
-// ФУНКЦІЯ АНАЛІЗУ ЧЕРЕЗ GEMINI SDK
+// ФУНКЦІЯ АНАЛІЗУ
 // ==========================================
 async function analyzeHeadlinesBatch(items, retries = 2) {
   const numbered = items.map((item, i) => `${i + 1}. "${item.text}"`).join('\n');
@@ -64,19 +62,16 @@ Respond with a JSON array. The array MUST have exactly ${items.length} objects, 
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // Отримання моделі через правильний метод SDK
-      const model = genAI.getGenerativeModel({ 
+      const response = await ai.models.generateContent({
         model: MODEL,
-        generationConfig: {
+        contents: prompt,
+        config: {
           responseMimeType: 'application/json',
           temperature: 0.2
         }
       });
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text() || '';
-
+      const text = response.text || '';
       const cleanJson = text.replace(/```json\n?|```/g, '').trim();
       return JSON.parse(cleanJson);
 
