@@ -1,58 +1,38 @@
-// index.js — Market Pulse AI
-require('dotenv').config();
-const { fetchAllSources } = require('./newsFetcher');
-const store = require('./store');
-const fs = require('fs');
-const path = require('path');
+import fetch from 'node-fetch';
+import Parser from 'rss-parser';
 
-// ==== НАЛАШТУВАННЯ — з .env ====
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// ==========================================
+// НАЛАШТУВАННЯ ТА ЗМІННІ ОТОЧЕННЯ
+// ==========================================
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const IMPORTANCE_THRESHOLD = Number(process.env.IMPORTANCE_THRESHOLD || 7);
-const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || 30000);
-const CHUNK_SIZE = 10;
-const PUBLISH_LIMIT_PER_CYCLE = 6;
-const LOG_FILE = path.join(__dirname, 'market-pulse.log');
-const LOG_MAX_BYTES = 5 * 1024 * 1024;
+// Модель за замовчуванням gemini-1.5-flash
+const MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const IMPORTANCE_THRESHOLD = parseInt(process.env.IMPORTANCE_THRESHOLD || '7', 10);
+const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '30000', 10);
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+// Джерела RSS новин
+const RSS_FEEDS = [
+  '[https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance](https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance)',
+  '[https://feeds.a.dj.com/rss/RSSMarketsMain.xml](https://feeds.a.dj.com/rss/RSSMarketsMain.xml)',
+  '[https://www.investing.com/rss/news.rss](https://www.investing.com/rss/news.rss)'
+];
 
-function logLine(text) {
-  const stamp = new Date().toISOString();
-  try {
-    if (fs.existsSync(LOG_FILE) && fs.statSync(LOG_FILE).size > LOG_MAX_BYTES) {
-      fs.renameSync(LOG_FILE, LOG_FILE + '.old');
-    }
-  } catch { /* ignore */ }
-  fs.appendFile(LOG_FILE, `[${stamp}] ${text}\n`, () => {});
+const parser = new Parser();
+const processedNews = new Set();
+
+// Перевірка наявності ключових змінних
+if (!GEMINI_API_KEY || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+  console.error('❌ ПОМИЛКА: Не всі обов\'язкові змінні оточення встановлені!');
+  console.error('Перевірте наявність GEMINI_API_KEY, TELEGRAM_BOT_TOKEN та TELEGRAM_CHAT_ID.');
 }
 
-function checkConfig() {
-  const problems = [];
-  if (!BOT_TOKEN) problems.push('TELEGRAM_BOT_TOKEN не заданий у .env');
-  if (!CHAT_ID) problems.push('TELEGRAM_CHAT_ID не заданий у .env');
-  if (!GEMINI_API_KEY) problems.push('GEMINI_API_KEY не заданий у .env');
-  if (problems.length) {
-    console.error('❌ Перш ніж запускати, додай змінні оточення:');
-    problems.forEach(p => console.error('   - ' + p));
-    process.exit(1);
-  }
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function chunkArray(arr, size) {
-  const chunks = [];
-  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
-  return chunks;
-}
-
-// ==== Аналіз через Gemini ====
-async function analyzeHeadlinesBatch(items) {
+// ==========================================
+// ФУНКЦІЯ АНАЛІЗУ ЧЕРЕЗ GEMINI API
+// ==========================================
+async function analyzeHeadlinesBatch(items, retries = 2) {
   const numbered = items.map((item, i) => `${i + 1}. "${item.text}"`).join('\n');
 
   const prompt = `Analyze these ${items.length} financial news headlines for a trading signal system, one by one.
@@ -63,266 +43,162 @@ ${numbered}
 Respond with a JSON array. The array MUST have exactly ${items.length} objects, in the SAME ORDER as the headlines above. Each object:
 {"summary":"max 15 words, facts only, no adjectives","direction":"Bullish or Bearish or Neutral","importance":integer 1 to 10,"confidence":integer 1 to 100,"assets":["max 3 tickers or asset names"],"category":"Macro or Stocks or Commodities or Crypto or Rates or Geopolitics or Earnings"}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent`;
-  
-  const MAX_RETRIES = 4;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+  const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-    let res;
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      res = await fetch(url, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' }
-        }),
-        signal: controller.signal
+          generationConfig: { 
+            responseMimeType: 'application/json',
+            temperature: 0.2
+          }
+        })
       });
-    } catch (e) {
-      clearTimeout(timeoutId);
-      if (e.name === 'AbortError') {
-        logLine(`Gemini timeout на спробі ${attempt}`);
-        if (attempt < MAX_RETRIES) continue;
-        throw new Error('Gemini не відповідає (timeout) після всіх спроб');
-      }
-      throw e;
-    }
-    clearTimeout(timeoutId);
 
-    if (res.ok) {
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const clean = text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
+      
+      // Очищення відповіді від можливих розеток markdown ```json ... ```
+      const cleanJson = text.replace(/```json\n?|```/g, '').trim();
+      return JSON.parse(cleanJson);
 
-      if (!Array.isArray(parsed) || parsed.length !== items.length) {
-        throw new Error(`Gemini повернув не той формат: очікував ${items.length} елементів`);
+    } catch (err) {
+      if (attempt < retries) {
+        console.warn(`⚠️ Спроба ${attempt + 1} не вдалася (${err.message}). Повтор через 3 сек...`);
+        await new Promise((r) => setTimeout(r, 3000));
+      } else {
+        throw err;
       }
-      return parsed;
     }
-
-    if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
-      const waitSec = Math.min(60, attempt * 15) + Math.random() * 3;
-      logLine(`Gemini 429/503 на спробі ${attempt}, чекаю ${waitSec.toFixed(0)}с`);
-      await sleep(waitSec * 1000);
-      continue;
-    }
-
-    const errText = await res.text();
-    logLine(`Gemini помилка HTTP ${res.status}: ${errText.slice(0, 200)}`);
-    throw new Error(`Gemini API помилка: HTTP ${res.status}: ${errText.slice(0, 150)}`);
   }
 }
 
-async function analyzeAllNew(items) {
-  const chunks = chunkArray(items, CHUNK_SIZE);
-  console.log(`   📡 Аналізую ${items.length} заголовків паралельно, ${chunks.length} батч(ів)...`);
-
-  const settled = await Promise.allSettled(
-    chunks.map(chunk => analyzeHeadlinesBatch(chunk).then(analyses => ({ chunk, analyses })))
-  );
-
-  let successCount = 0;
-  let failCount = 0;
-
-  for (const result of settled) {
-    if (result.status === 'fulfilled') {
-      const { chunk, analyses } = result.value;
-      for (let i = 0; i < chunk.length; i++) {
-        const item = chunk[i];
-        const a = analyses[i];
-        console.log(`   → "${item.text.slice(0, 60)}..." — важливість ${a.importance}/10`);
-        store.upsert(item._dedupeKey, {
-          analyzed: true,
-          pushed: false,
-          text: item.text,
-          url: item.url,
-          source: item.source,
-          category: a.category || item.category,
-          summary: a.summary,
-          direction: a.direction,
-          importance: a.importance,
-          confidence: a.confidence,
-          assets: a.assets
-        });
-        successCount++;
-      }
-    } else {
-      failCount++;
-      const msg = result.reason?.message || String(result.reason);
-      console.error(`   ❌ Один із батчів аналізу впав: ${msg}`);
-      logLine(`Батч аналізу впав: ${msg}`);
-    }
-  }
-
-  return { successCount, failCount, totalChunks: chunks.length };
-}
-
-function dirArrow(direction) {
-  if (direction === 'Bullish') return '↑';
-  if (direction === 'Bearish') return '↓';
-  return '→';
-}
-
-function formatPost(item) {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Kyiv' });
-  const timeStr = now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Kyiv' });
-
-  return `🚨 <b>BREAKING</b>
-${item.text}
-
-${item.summary}
-
-${dirArrow(item.direction)} ${item.direction} — ${(item.assets || []).join(', ')}
-
-Важливість: <b>${item.importance}/10</b>
-Впевненість: <b>${item.confidence}%</b>
-Категорія: ${item.category}
-
-🕐 ${dateStr} ${timeStr} (Київ)
-🔗 <a href="${item.url}">Першоджерело: ${item.source}</a>`;
-}
-
-async function publishToTelegram(text) {
-  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
-  for (let attempt = 1; attempt <= 2; attempt++) {
+// ==========================================
+// ВІДПРАВКА ПОВІДОМЛЕННЯ В TELEGRAM
+// ==========================================
+async function sendTelegramMessage(text) {
+  const url = `[https://api.telegram.org/bot$](https://api.telegram.org/bot$){TELEGRAM_BOT_TOKEN}/sendMessage`;
+  try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text,
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
         parse_mode: 'HTML',
-        disable_web_page_preview: false
+        disable_web_page_preview: true
       })
     });
 
-    if (res.ok) return;
-
-    const errText = await res.text();
-    let errJson = null;
-    try { errJson = JSON.parse(errText); } catch { /* ignore */ }
-
-    if (res.status === 429 && errJson?.parameters?.retry_after && attempt < 2) {
-      const waitSec = Math.min(errJson.parameters.retry_after, 60);
-      console.log(`      (Telegram просить почекати ${waitSec} сек, повторюю...)`);
-      await sleep(waitSec * 1000);
-      continue;
+    if (!res.ok) {
+      const errData = await res.json();
+      console.error('❌ Помилка Telegram API:', errData);
     }
-
-    const err = new Error(`Telegram помилка: HTTP ${res.status}: ${errText}`);
-    if ([400, 401, 404].includes(res.status)) err.stopQueue = true;
-    throw err;
+  } catch (err) {
+    console.error('❌ Помилка мережі при відправці в Telegram:', err.message);
   }
 }
 
-async function publishPending() {
-  const pending = store.getPendingToPush(IMPORTANCE_THRESHOLD, PUBLISH_LIMIT_PER_CYCLE);
-  if (pending.length === 0) return;
+// ==========================================
+// ОСНОВНИЙ ЦИКЛ ОБРОБКИ НОВИН
+// ==========================================
+async function fetchAndProcessNews() {
+  const newItems = [];
 
-  console.log(`   Публікую ${pending.length} новин з черги...`);
-  for (const item of pending) {
+  for (const feedUrl of RSS_FEEDS) {
     try {
-      const post = formatPost(item);
-      await publishToTelegram(post);
-      store.markPushed(item.key);
-      console.log(`   ✅ Опубліковано: "${item.text.slice(0, 50)}..."`);
-      await sleep(1200);
-    } catch (e) {
-      console.error(`   ❌ Помилка публікації: ${e.message}`);
-      logLine(`Помилка публікації "${item.text.slice(0, 60)}": ${e.message}`);
-      if (e.stopQueue) {
-        console.log('   ⚠️  Проблема з токеном/chat_id — зупиняю чергу');
-        break;
+      const feed = await parser.parseURL(feedUrl);
+      for (const item of feed.items || []) {
+        const id = item.guid || item.link || item.title;
+        if (id && !processedNews.has(id)) {
+          processedNews.add(id);
+          newItems.push({
+            id,
+            text: item.title,
+            link: item.link
+          });
+        }
       }
+    } catch (err) {
+      console.warn(`⚠️ Не вдалося завантажити стрічку ${feedUrl}: ${err.message}`);
     }
   }
-}
 
-let cycleCount = 0;
-let isBusy = false;
-let skipLogged = false;
-
-async function pollCycle() {
-  if (isBusy) {
-    if (!skipLogged) {
-      console.log('   (попередній цикл ще не завершився — чекаю)');
-      skipLogged = true;
-    }
+  if (newItems.length === 0) {
     return;
   }
-  skipLogged = false;
-  isBusy = true;
 
-  try {
-    cycleCount++;
-    const stamp = new Date().toLocaleTimeString('uk-UA', { timeZone: 'Europe/Kyiv' });
-    console.log(`\n[${stamp}] Цикл #${cycleCount}: перевіряю джерела...`);
+  console.log(`\n Знайдено ${newItems.length} нових заголовків. Аналізую через ${MODEL}...`);
 
-    let headlines = [];
+  // Розбиваємо новини на батчі по 10 штук
+  const BATCH_SIZE = 10;
+  for (let i = 0; i < newItems.length; i += BATCH_SIZE) {
+    const batch = newItems.slice(i, i + BATCH_SIZE);
+    
     try {
-      headlines = await fetchAllSources();
-    } catch (e) {
-      console.error('❌ Не вдалось отримати новини:', e.message);
-      logLine(`Помилка fetchAllSources: ${e.message}`);
+      const results = await analyzeHeadlinesBatch(batch);
+
+      results.forEach((analysis, idx) => {
+        const item = batch[idx];
+        if (!item || !analysis) return;
+
+        const importance = analysis.importance || 0;
+        console.log(` → [${importance}/10] ${item.text}`);
+
+        if (importance >= IMPORTANCE_THRESHOLD) {
+          const emoji = analysis.direction === 'Bullish' ? '📈' : analysis.direction === 'Bearish' ? '📉' : '⚖️';
+          const message = `${emoji} <b>Market Pulse AI Signal</b>\n\n` +
+            `<b>Заголовок:</b> ${item.text}\n` +
+            `<b>Коротко:</b> ${analysis.summary}\n` +
+            `<b>Напрямок:</b> ${analysis.direction}\n` +
+            `<b>Важливість:</b> ${importance}/10 (Впевненість: ${analysis.confidence}%)\n` +
+            `<b>Активи:</b> ${(analysis.assets || []).join(', ')}\n` +
+            `<b>Категорія:</b> ${analysis.category}\n\n` +
+            `🔗 <a href="${item.link}">Читати джерело</a>`;
+
+          sendTelegramMessage(message);
+          console.log(` ✅ Опубліковано важливу новину: "${item.text}"`);
+        }
+      });
+    } catch (err) {
+      console.error(`❌ Помилка аналізу батчу: ${err.message}`);
     }
-
-    const newHeadlines = headlines.filter(h => !store.has(h._dedupeKey));
-
-    if (newHeadlines.length > 0) {
-      console.log(`   Знайдено ${newHeadlines.length} нових заголовків (з ${headlines.length} у стрічці).`);
-      const { failCount, totalChunks } = await analyzeAllNew(newHeadlines);
-      if (failCount > 0) {
-        console.log(`   ⚠️  ${failCount}/${totalChunks} батч(ів) не вдалось проаналізувати.`);
-      }
-    } else {
-      console.log('   Нових заголовків немає.');
-    }
-
-    await publishPending();
-
-    if (cycleCount % 500 === 0) store.prune();
-
-  } catch (e) {
-    console.error('❌ Непередбачена помилка в циклі:', e.message);
-    logLine(`Непередбачена помилка в pollCycle: ${e.stack || e.message}`);
-  } finally {
-    isBusy = false;
   }
 }
 
-process.on('unhandledRejection', (reason) => {
-  const msg = reason?.stack || reason?.message || String(reason);
-  console.error('❌ unhandledRejection:', msg);
-  logLine(`unhandledRejection: ${msg}`);
-});
-process.on('uncaughtException', (err) => {
-  console.error('❌ uncaughtException:', err.stack || err.message);
-  logLine(`uncaughtException: ${err.stack || err.message}`);
-});
+// ==========================================
+// ЗАПУСК БОТА
+// ==========================================
+let cycleCount = 0;
 
-process.on('SIGINT', () => {
-  console.log('\n👋 Зупиняюсь (Ctrl+C).');
-  process.exit(0);
-});
-process.on('SIGTERM', () => {
-  console.log('\n👋 Зупиняюсь (SIGTERM).');
-  process.exit(0);
-});
+async function start() {
+  console.log('🚀 Market Pulse AI запущено.');
+  console.log(`   Модель: ${MODEL}`);
+  console.log(`   Поріг важливості: ${IMPORTANCE_THRESHOLD}/10`);
+  console.log(`   Інтервал перевірки: ${CHECK_INTERVAL_MS / 1000} сек`);
 
-checkConfig();
-console.log('🚀 Market Pulse AI запущено.');
-console.log(`   Поріг важливості: ${IMPORTANCE_THRESHOLD}/10`);
-console.log(`   Перевірка кожні: ${POLL_INTERVAL_MS / 1000} сек`);
-console.log(`   У сховищі вже ${store.size} оброблених новин.`);
+  // Запускаємо відразу при старті
+  cycleCount++;
+  console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
+  await fetchAndProcessNews();
 
-pollCycle();
-setInterval(pollCycle, POLL_INTERVAL_MS);
+  // Запускаємо повторення за інтервалом
+  setInterval(async () => {
+    cycleCount++;
+    console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
+    await fetchAndProcessNews();
+  }, CHECK_INTERVAL_MS);
+}
+
+start();
