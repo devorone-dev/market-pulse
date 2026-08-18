@@ -1,4 +1,17 @@
+import http from 'http';
+import { GoogleGenAI } from '@google/genai';
 import Parser from 'rss-parser';
+
+// ==========================================
+// ФІКС ДЛЯ RENDER (Фейковий веб-сервер)
+// ==========================================
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Market Pulse AI Bot is active');
+}).listen(PORT, () => {
+  console.log(`🌐 Web-server listening on port ${PORT} (for Render)`);
+});
 
 // ==========================================
 // НАЛАШТУВАННЯ ТА ЗМІННІ ОТОЧЕННЯ
@@ -7,19 +20,19 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// Модель за замовчуванням gemini-1.5-flash
-const MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const IMPORTANCE_THRESHOLD = parseInt(process.env.IMPORTANCE_THRESHOLD || '7', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '30000', 10);
 
-// Перевірені та стабільні RSS-стрічки
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+// Оновлені та працюючі RSS-стрічки
 const RSS_FEEDS = [
   'https://feeds.content.dowjones.io/public/rss/mw_topstories',
   'https://search.cnbc.com/rs/search/combinedrender?source=yahoo&partnerId=2001&collection=all&keywords=finance',
   'https://www.coindesk.com/arc/outboundfeeds/rss/'
 ];
 
-// Ініціалізація RSS парсера з User-Agent (щоб сайти не блокували запити)
 const parser = new Parser({
   headers: {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -29,14 +42,12 @@ const parser = new Parser({
 
 const processedNews = new Set();
 
-// Перевірка наявності ключових змінних
 if (!GEMINI_API_KEY || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-  console.error('❌ ПОМИЛКА: Не всі обов\'язкові змінні оточення встановлені!');
-  console.error('Перевірте наявність GEMINI_API_KEY, TELEGRAM_BOT_TOKEN та TELEGRAM_CHAT_ID.');
+  console.error('❌ ПОМИЛКА: Перевірте наявність GEMINI_API_KEY, TELEGRAM_BOT_TOKEN та TELEGRAM_CHAT_ID!');
 }
 
 // ==========================================
-// ФУНКЦІЯ АНАЛІЗУ ЧЕРЕЗ GEMINI API
+// ФУНКЦІЯ АНАЛІЗУ ЧЕРЕЗ GEMINI SDK
 // ==========================================
 async function analyzeHeadlinesBatch(items, retries = 2) {
   const numbered = items.map((item, i) => `${i + 1}. "${item.text}"`).join('\n');
@@ -49,32 +60,18 @@ ${numbered}
 Respond with a JSON array. The array MUST have exactly ${items.length} objects, in the SAME ORDER as the headlines above. Each object:
 {"summary":"max 15 words, facts only, no adjectives","direction":"Bullish or Bearish or Neutral","importance":integer 1 to 10,"confidence":integer 1 to 100,"assets":["max 3 tickers or asset names"],"category":"Macro or Stocks or Commodities or Crypto or Rates or Geopolitics or Earnings"}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { 
-            responseMimeType: 'application/json',
-            temperature: 0.2
-          }
-        })
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.2
+        }
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`HTTP ${res.status}: ${errText}`);
-      }
-
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
+      const text = response.text || '';
       const cleanJson = text.replace(/```json\n?|```/g, '').trim();
       return JSON.parse(cleanJson);
 
@@ -90,7 +87,7 @@ Respond with a JSON array. The array MUST have exactly ${items.length} objects, 
 }
 
 // ==========================================
-// ВІДПРАВКА ПОВІДОМЛЕННЯ В TELEGRAM
+// ВІДПРАВКА В TELEGRAM
 // ==========================================
 async function sendTelegramMessage(text) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -116,7 +113,7 @@ async function sendTelegramMessage(text) {
 }
 
 // ==========================================
-// ОСНОВНИЙ ЦИКЛ ОБРОБКИ НОВИН
+// ЦИКЛ ОБРОБКИ
 // ==========================================
 async function fetchAndProcessNews() {
   const newItems = [];
@@ -140,9 +137,7 @@ async function fetchAndProcessNews() {
     }
   }
 
-  if (newItems.length === 0) {
-    return;
-  }
+  if (newItems.length === 0) return;
 
   console.log(`\n Знайдено ${newItems.length} нових заголовків. Аналізую через ${MODEL}...`);
 
@@ -182,7 +177,7 @@ async function fetchAndProcessNews() {
 }
 
 // ==========================================
-// ЗАПУСК БОТА
+// ЗАПУСК
 // ==========================================
 let cycleCount = 0;
 
@@ -190,7 +185,6 @@ async function start() {
   console.log('🚀 Market Pulse AI запущено.');
   console.log(`   Модель: ${MODEL}`);
   console.log(`   Поріг важливості: ${IMPORTANCE_THRESHOLD}/10`);
-  console.log(`   Інтервал перевірки: ${CHECK_INTERVAL_MS / 1000} сек`);
 
   cycleCount++;
   console.log(`\n[${new Date().toLocaleTimeString()}] Цикл #${cycleCount}`);
